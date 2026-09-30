@@ -1,9 +1,12 @@
+import json
+
+
 class Book:
-    def __init__(self, book_id, title, author):
+    def __init__(self, book_id, title, author, available=True):
         self.book_id = book_id
         self.title = title
         self.author = author
-        self.available = True
+        self.available = available
 
     def borrow(self):
         if self.available:
@@ -24,6 +27,7 @@ class Library:
 
     def show_books(self):
         print("\n--- Library Books ---")
+
         for book in self.books:
             status = "Available" if book.available else "Borrowed"
             print(f"{book.book_id}. {book.title} by {book.author} - {status}")
@@ -36,6 +40,7 @@ class Library:
                 else:
                     print("This book is already borrowed.")
                 return
+
         print("Book not found.")
 
     def return_book(self, book_id):
@@ -44,15 +49,57 @@ class Library:
                 book.return_book()
                 print(f"You returned: {book.title}")
                 return
+
         print("Book not found.")
+
+    # SAVE
+    def save_books(self):
+        data = []
+
+        for book in self.books:
+            data.append({
+                "book_id": book.book_id,
+                "title": book.title,
+                "author": book.author,
+                "available": book.available
+            })
+
+        with open("books.json", "w") as file:
+            json.dump(data, file, indent=4)
+
+    # LOAD
+    def load_books(self):
+        try:
+            with open("books.json", "r") as file:
+                data = json.load(file)
+
+            self.books = []
+
+            for book in data:
+                self.books.append(
+                    Book(
+                        book["book_id"],
+                        book["title"],
+                        book["author"],
+                        book["available"]
+                    )
+                )
+
+            print("Books loaded successfully.")
+
+        except FileNotFoundError:
+            print("No saved books found. Loading default books.")
+
+            self.add_book(Book(1, "Harry Potter", "J.K. Rowling"))
+            self.add_book(Book(2, "The Hobbit", "J.R.R. Tolkien"))
+            self.add_book(Book(3, "Animal Farm", "George Orwell"))
 
 
 def main():
     library = Library()
 
-    library.add_book(Book(1, "Harry Potter", "J.K. Rowling"))
-    library.add_book(Book(2, "The Hobbit", "J.R.R. Tolkien"))
-    library.add_book(Book(3, "Animal Farm", "George Orwell"))
+    # LOAD saved books when the program starts
+    library.load_books()
 
     while True:
         print("\n=== School Library App ===")
@@ -69,12 +116,16 @@ def main():
         elif choice == "2":
             book_id = int(input("Enter book ID: "))
             library.borrow_book(book_id)
+            library.save_books()
 
         elif choice == "3":
             book_id = int(input("Enter book ID: "))
             library.return_book(book_id)
+            library.save_books()
 
         elif choice == "4":
+            library.save_books()
+            print("Books saved successfully.")
             print("Thank you for using the School Library App!")
             break
 
